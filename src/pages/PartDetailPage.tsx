@@ -3,26 +3,20 @@ import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Package, Star, CheckCircle, AlertCircle } from 'lucide-react';
 import ImageGallery from '../components/ImageGallery';
 import ContactForm from '../components/ContactForm';
-import { usePart } from '../hooks/useParts';
+import { useStaticParts } from '../hooks/useStaticData';
 
 const PartDetailPage = () => {
   const { id } = useParams<{ id: string }>();
-  const { data: part, isLoading, error } = usePart(id!);
+  const { getPartById } = useStaticParts();
   const [showContactForm, setShowContactForm] = useState(false);
+  
+  const part = getPartById(id!);
 
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
-      </div>
-    );
-  }
-
-  if (error || !part) {
+  if (!part) {
     return (
       <div className="min-h-screen pt-32 pb-16">
         <div className="container mx-auto px-4 text-center">
@@ -78,13 +72,6 @@ const PartDetailPage = () => {
     }
   };
 
-  // Adapter les données de l'API Django
-  const images = part.images?.map((img: any) => img.image) || [
-    'https://images.pexels.com/photos/2539322/pexels-photo-2539322.jpeg'
-  ];
-  const price = parseFloat(part.price);
-  const categoryName = part.category?.name || part.category;
-
   return (
     <div className="min-h-screen pt-32 pb-16">
       <div className="container mx-auto px-4">
@@ -102,7 +89,7 @@ const PartDetailPage = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 p-6 lg:p-8">
             <div>
               <ImageGallery 
-                images={images} 
+                images={part.images} 
                 alt={part.name} 
               />
             </div>
@@ -112,7 +99,7 @@ const PartDetailPage = () => {
                 <h1 className="text-3xl font-bold text-gray-900">
                   {part.name}
                 </h1>
-                {part.is_featured && (
+                {part.isFeatured && (
                   <div className="bg-red-600 text-white text-xs font-bold uppercase px-3 py-1 rounded flex items-center">
                     <Star size={12} className="mr-1" />
                     À la une
@@ -122,7 +109,7 @@ const PartDetailPage = () => {
               
               <div className="flex items-center mb-6">
                 <span className="text-2xl font-bold text-red-600 mr-4">
-                  {price.toLocaleString('fr-FR')} €
+                  {part.price.toLocaleString('fr-FR')} €
                 </span>
                 <span className={`text-sm font-medium px-3 py-1 rounded ${getConditionColor(part.condition)}`}>
                   {getConditionLabel(part.condition)}
@@ -165,7 +152,7 @@ const PartDetailPage = () => {
                   </svg>
                   <div>
                     <p className="text-sm text-gray-600">Catégorie</p>
-                    <p className="font-medium text-gray-900">{categoryName}</p>
+                    <p className="font-medium text-gray-900">{part.category}</p>
                   </div>
                 </div>
                 
@@ -178,7 +165,7 @@ const PartDetailPage = () => {
                   <div>
                     <p className="text-sm text-gray-600">Disponibilité</p>
                     <p className="font-medium text-gray-900">
-                      {part.is_available && part.stock > 0 ? 'En stock' : 'Rupture de stock'}
+                      {part.isAvailable && part.stock > 0 ? 'En stock' : 'Rupture de stock'}
                     </p>
                   </div>
                 </div>
@@ -186,24 +173,38 @@ const PartDetailPage = () => {
               
               <div className="mb-8">
                 <h2 className="text-xl font-bold text-gray-900 mb-3">Modèles compatibles</h2>
-                <p className="text-gray-700 bg-gray-50 p-3 rounded-md">{part.compatible_models}</p>
+                <p className="text-gray-700 bg-gray-50 p-3 rounded-md">{part.compatibleModels}</p>
               </div>
               
               <div className="mb-8">
                 <h2 className="text-xl font-bold text-gray-900 mb-3">Description</h2>
                 <p className="text-gray-700">{part.description}</p>
               </div>
+
+              {part.specifications && Object.keys(part.specifications).length > 0 && (
+                <div className="mb-8">
+                  <h2 className="text-xl font-bold text-gray-900 mb-3">Spécifications</h2>
+                  <div className="bg-gray-50 p-4 rounded-md">
+                    {Object.entries(part.specifications).map(([key, value]) => (
+                      <div key={key} className="flex justify-between py-1">
+                        <span className="text-gray-600 capitalize">{key.replace('_', ' ')}:</span>
+                        <span className="font-medium text-gray-900">{value}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
               
               <button
                 onClick={toggleContactForm}
-                disabled={!part.is_available || part.stock === 0}
+                disabled={!part.isAvailable || part.stock === 0}
                 className={`w-full py-3 font-medium rounded-md transition-colors duration-300 ${
-                  part.is_available && part.stock > 0
+                  part.isAvailable && part.stock > 0
                     ? 'bg-red-600 text-white hover:bg-red-700'
                     : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                 }`}
               >
-                {part.is_available && part.stock > 0 ? 'Contacter pour cette pièce' : 'Pièce indisponible'}
+                {part.isAvailable && part.stock > 0 ? 'Contacter pour cette pièce' : 'Pièce indisponible'}
               </button>
             </div>
           </div>

@@ -1,30 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, Save, X, Settings, Clock, Mail, Phone, MapPin, Facebook, Instagram, Youtube, Lock } from 'lucide-react';
 import SectionTitle from '../components/SectionTitle';
-import { motorcycles } from '../data/motorcycles';
-import { Motorcycle } from '../types/Motorcycle';
-
-interface BlogPost {
-  id: string;
-  title: string;
-  content: string;
-  category: string;
-  image: string;
-  isPublished: boolean;
-  createdAt: string;
-}
-
-interface Part {
-  id: string;
-  name: string;
-  category: string;
-  brand: string;
-  compatibleModels: string;
-  price: number;
-  stock: number;
-  description: string;
-  image: string;
-}
+import { useStaticMotorcycles, useStaticParts, useStaticBlog, useStaticCategories } from '../hooks/useStaticData';
 
 interface SocialMedia {
   facebook: string;
@@ -57,33 +34,11 @@ const AdminPage = () => {
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
   
-  // Sample data
-  const [adminMotorcycles, setAdminMotorcycles] = useState<Motorcycle[]>(motorcycles);
-  const [parts, setParts] = useState<Part[]>([
-    {
-      id: '1',
-      name: 'Pot d\'échappement Akrapovic',
-      category: 'Échappement',
-      brand: 'Akrapovic',
-      compatibleModels: 'Yamaha MT-07, MT-09',
-      price: 450,
-      stock: 3,
-      description: 'Pot d\'échappement sport en titane',
-      image: 'https://images.pexels.com/photos/2539322/pexels-photo-2539322.jpeg'
-    }
-  ]);
-  
-  const [blogPosts, setBlogPosts] = useState<BlogPost[]>([
-    {
-      id: '1',
-      title: 'Les meilleures motos pour débuter',
-      content: 'Contenu de l\'article...',
-      category: 'Conseils',
-      image: 'https://images.pexels.com/photos/2519374/pexels-photo-2519374.jpeg',
-      isPublished: true,
-      createdAt: '2023-06-01'
-    }
-  ]);
+  // Hooks pour les données statiques
+  const motorcycleHook = useStaticMotorcycles();
+  const partHook = useStaticParts();
+  const blogHook = useStaticBlog();
+  const { partCategories, blogCategories } = useStaticCategories();
 
   const [garageInfo, setGarageInfo] = useState<GarageInfo>({
     name: 'Agde Moto Gattuso',
@@ -110,6 +65,11 @@ const AdminPage = () => {
 
   useEffect(() => {
     window.scrollTo(0, 0);
+    // Charger les infos du garage depuis localStorage
+    const storedGarageInfo = localStorage.getItem('agde-moto-garage-info');
+    if (storedGarageInfo) {
+      setGarageInfo(JSON.parse(storedGarageInfo));
+    }
   }, []);
 
   const handleLogin = (e: React.FormEvent) => {
@@ -146,13 +106,13 @@ const AdminPage = () => {
     if (window.confirm('Êtes-vous sûr de vouloir supprimer cet élément ?')) {
       switch (type) {
         case 'motorcycle':
-          setAdminMotorcycles(prev => prev.filter(m => m.id !== id));
+          motorcycleHook.deleteMotorcycle(id);
           break;
         case 'part':
-          setParts(prev => prev.filter(p => p.id !== id));
+          partHook.deletePart(id);
           break;
         case 'blog':
-          setBlogPosts(prev => prev.filter(b => b.id !== id));
+          blogHook.deletePost(id);
           break;
       }
     }
@@ -165,32 +125,43 @@ const AdminPage = () => {
       // Update existing item
       switch (activeTab) {
         case 'motorcycles':
-          setAdminMotorcycles(prev => prev.map(m => m.id === editingItem.id ? { ...formData } : m));
+          motorcycleHook.updateMotorcycle(editingItem.id, formData);
           break;
         case 'parts':
-          setParts(prev => prev.map(p => p.id === editingItem.id ? { ...formData } : p));
+          partHook.updatePart(editingItem.id, formData);
           break;
         case 'blog':
-          setBlogPosts(prev => prev.map(b => b.id === editingItem.id ? { ...formData } : b));
+          blogHook.updatePost(editingItem.id, formData);
           break;
       }
     } else {
       // Create new item
-      const newItem = {
-        ...formData,
-        id: Date.now().toString(),
-        createdAt: new Date().toISOString().split('T')[0]
-      };
-      
       switch (activeTab) {
         case 'motorcycles':
-          setAdminMotorcycles(prev => [...prev, newItem]);
+          // Convertir les images en tableau si c'est une chaîne
+          const motorcycleData = {
+            ...formData,
+            images: typeof formData.images === 'string' 
+              ? [formData.images] 
+              : formData.images || [],
+            features: typeof formData.features === 'string'
+              ? formData.features.split(',').map((f: string) => f.trim())
+              : formData.features || []
+          };
+          motorcycleHook.addMotorcycle(motorcycleData);
           break;
         case 'parts':
-          setParts(prev => [...prev, newItem]);
+          const partData = {
+            ...formData,
+            images: typeof formData.images === 'string' 
+              ? [formData.images] 
+              : formData.images || [],
+            specifications: formData.specifications || {}
+          };
+          partHook.addPart(partData);
           break;
         case 'blog':
-          setBlogPosts(prev => [...prev, newItem]);
+          blogHook.addPost(formData);
           break;
       }
     }
@@ -208,7 +179,7 @@ const AdminPage = () => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
-    setFormData(prev => ({
+    setFormData((prev: any) => ({
       ...prev,
       [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
     }));
@@ -246,16 +217,9 @@ const AdminPage = () => {
     }));
   };
 
-  const saveSocialMedia = () => {
-    alert('Liens des réseaux sociaux sauvegardés !');
-  };
-
   const saveGarageInfo = () => {
+    localStorage.setItem('agde-moto-garage-info', JSON.stringify(garageInfo));
     alert('Informations du garage sauvegardées !');
-  };
-
-  const saveHours = () => {
-    alert('Horaires sauvegardés !');
   };
 
   // Login form if not authenticated
@@ -267,6 +231,13 @@ const AdminPage = () => {
             <Lock size={48} className="mx-auto text-red-600 mb-4" />
             <h1 className="text-2xl font-bold text-gray-900">Administration</h1>
             <p className="text-gray-600 mt-2">Connectez-vous pour accéder au panneau d'administration</p>
+            <div className="mt-4 p-3 bg-blue-50 rounded-md">
+              <p className="text-sm text-blue-800">
+                <strong>Identifiants de démonstration :</strong><br />
+                Utilisateur : admin<br />
+                Mot de passe : gattuso2024
+              </p>
+            </div>
           </div>
 
           <form onSubmit={handleLogin} className="space-y-6">
@@ -442,10 +413,22 @@ const AdminPage = () => {
         <label className="block text-sm font-medium text-gray-700 mb-1">URL de l'image principale</label>
         <input
           type="url"
-          name="mainImage"
-          value={formData.mainImage || ''}
+          name="images"
+          value={Array.isArray(formData.images) ? formData.images[0] || '' : formData.images || ''}
           onChange={handleInputChange}
           required
+          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Équipements (séparés par des virgules)</label>
+        <input
+          type="text"
+          name="features"
+          value={Array.isArray(formData.features) ? formData.features.join(', ') : formData.features || ''}
+          onChange={handleInputChange}
+          placeholder="ABS, Éclairage LED, Contrôle de traction"
           className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
         />
       </div>
@@ -517,12 +500,9 @@ const AdminPage = () => {
             className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
           >
             <option value="">Sélectionner</option>
-            <option value="Échappement">Échappement</option>
-            <option value="Freinage">Freinage</option>
-            <option value="Suspension">Suspension</option>
-            <option value="Carrosserie">Carrosserie</option>
-            <option value="Moteur">Moteur</option>
-            <option value="Électrique">Électrique</option>
+            {partCategories.map(cat => (
+              <option key={cat.id} value={cat.name}>{cat.name}</option>
+            ))}
           </select>
         </div>
         <div>
@@ -558,6 +538,23 @@ const AdminPage = () => {
             className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
           />
         </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">État</label>
+          <select
+            name="condition"
+            value={formData.condition || ''}
+            onChange={handleInputChange}
+            required
+            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+          >
+            <option value="">Sélectionner</option>
+            <option value="new">Neuf</option>
+            <option value="used_excellent">Occasion - Excellent</option>
+            <option value="used_good">Occasion - Bon état</option>
+            <option value="used_fair">Occasion - État correct</option>
+            <option value="refurbished">Reconditionné</option>
+          </select>
+        </div>
       </div>
       
       <div>
@@ -589,12 +586,35 @@ const AdminPage = () => {
         <label className="block text-sm font-medium text-gray-700 mb-1">URL de l'image</label>
         <input
           type="url"
-          name="image"
-          value={formData.image || ''}
+          name="images"
+          value={Array.isArray(formData.images) ? formData.images[0] || '' : formData.images || ''}
           onChange={handleInputChange}
           required
           className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
         />
+      </div>
+
+      <div className="flex items-center space-x-4">
+        <label className="flex items-center">
+          <input
+            type="checkbox"
+            name="isAvailable"
+            checked={formData.isAvailable !== false}
+            onChange={handleInputChange}
+            className="mr-2"
+          />
+          Disponible
+        </label>
+        <label className="flex items-center">
+          <input
+            type="checkbox"
+            name="isFeatured"
+            checked={formData.isFeatured || false}
+            onChange={handleInputChange}
+            className="mr-2"
+          />
+          À la une
+        </label>
       </div>
 
       <div className="flex space-x-4">
@@ -641,10 +661,9 @@ const AdminPage = () => {
           className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
         >
           <option value="">Sélectionner</option>
-          <option value="Conseils">Conseils</option>
-          <option value="Actualités">Actualités</option>
-          <option value="Tests">Tests</option>
-          <option value="Entretien">Entretien</option>
+          {blogCategories.map(cat => (
+            <option key={cat.id} value={cat.name}>{cat.name}</option>
+          ))}
         </select>
       </div>
 
@@ -808,7 +827,7 @@ const AdminPage = () => {
           </div>
         </div>
         <button
-          onClick={saveSocialMedia}
+          onClick={saveGarageInfo}
           className="mt-6 px-6 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
         >
           <Save size={18} className="inline mr-2" />
@@ -845,6 +864,7 @@ const AdminPage = () => {
               </div>
               <div>
                 <input
+                  
                   type="time"
                   value={hours.close}
                   onChange={(e) => handleHoursChange(day, 'close', e.target.value)}
@@ -867,7 +887,7 @@ const AdminPage = () => {
           ))}
         </div>
         <button
-          onClick={saveHours}
+          onClick={saveGarageInfo}
           className="mt-6 px-6 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
         >
           <Save size={18} className="inline mr-2" />
@@ -905,7 +925,7 @@ const AdminPage = () => {
                     : 'border-transparent text-gray-500 hover:text-gray-700'
                 }`}
               >
-                Motos ({adminMotorcycles.length})
+                Motos ({motorcycleHook.data.length})
               </button>
               <button
                 onClick={() => setActiveTab('parts')}
@@ -915,7 +935,7 @@ const AdminPage = () => {
                     : 'border-transparent text-gray-500 hover:text-gray-700'
                 }`}
               >
-                Pièces détachées ({parts.length})
+                Pièces détachées ({partHook.data.length})
               </button>
               <button
                 onClick={() => setActiveTab('blog')}
@@ -925,7 +945,7 @@ const AdminPage = () => {
                     : 'border-transparent text-gray-500 hover:text-gray-700'
                 }`}
               >
-                Blog ({blogPosts.length})
+                Blog ({blogHook.data.length})
               </button>
               <button
                 onClick={() => setActiveTab('settings')}
@@ -1009,7 +1029,7 @@ const AdminPage = () => {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {activeTab === 'motorcycles' && adminMotorcycles.map((motorcycle) => (
+                    {activeTab === 'motorcycles' && motorcycleHook.data.map((motorcycle) => (
                       <tr key={motorcycle.id}>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
@@ -1045,11 +1065,11 @@ const AdminPage = () => {
                       </tr>
                     ))}
 
-                    {activeTab === 'parts' && parts.map((part) => (
+                    {activeTab === 'parts' && partHook.data.map((part) => (
                       <tr key={part.id}>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
-                            <img className="h-10 w-10 rounded-full object-cover" src={part.image} alt="" />
+                            <img className="h-10 w-10 rounded-full object-cover" src={part.images[0]} alt="" />
                             <div className="ml-4">
                               <div className="text-sm font-medium text-gray-900">{part.name}</div>
                               <div className="text-sm text-gray-500">{part.brand}</div>
@@ -1076,7 +1096,7 @@ const AdminPage = () => {
                       </tr>
                     ))}
 
-                    {activeTab === 'blog' && blogPosts.map((post) => (
+                    {activeTab === 'blog' && blogHook.data.map((post) => (
                       <tr key={post.id}>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">

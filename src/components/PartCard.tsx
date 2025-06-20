@@ -31,10 +31,12 @@ const PartCard = ({ part }: PartCardProps) => {
     }
   };
 
-  // Adapter les données de l'API Django
-  const mainImage = part.images?.[0]?.image || 'https://images.pexels.com/photos/2539322/pexels-photo-2539322.jpeg';
-  const price = parseFloat(part.price);
+  // Adapter les données pour les deux formats (API et statique)
+  const mainImage = part.images?.[0]?.image || part.images?.[0] || 'https://images.pexels.com/photos/2539322/pexels-photo-2539322.jpeg';
+  const price = typeof part.price === 'string' ? parseFloat(part.price) : part.price;
   const categoryName = part.category?.name || part.category;
+  const isFeatured = part.is_featured || part.isFeatured;
+  const compatibleModels = part.compatible_models || part.compatibleModels;
   
   return (
     <Link 
@@ -52,7 +54,7 @@ const PartCard = ({ part }: PartCardProps) => {
           }`}
         />
         <div className="absolute top-4 left-4 flex flex-col gap-2">
-          {part.is_featured && (
+          {isFeatured && (
             <div className="bg-red-600 text-white text-xs font-bold uppercase px-2 py-1 rounded flex items-center">
               <Star size={12} className="mr-1" />
               À la une
@@ -91,7 +93,7 @@ const PartCard = ({ part }: PartCardProps) => {
             {categoryName}
           </span>
           <p className="text-gray-600 text-sm">
-            Compatible: {part.compatible_models}
+            Compatible: {compatibleModels}
           </p>
         </div>
         

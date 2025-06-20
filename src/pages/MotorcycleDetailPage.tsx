@@ -3,26 +3,20 @@ import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Calendar, Gauge, Award, BarChart2, PaintBucket } from 'lucide-react';
 import ImageGallery from '../components/ImageGallery';
 import ContactForm from '../components/ContactForm';
-import { useMotorcycle } from '../hooks/useMotorcycles';
+import { useStaticMotorcycles } from '../hooks/useStaticData';
 
 const MotorcycleDetailPage = () => {
   const { id } = useParams<{ id: string }>();
-  const { data: motorcycle, isLoading, error } = useMotorcycle(id!);
+  const { getMotorcycleById } = useStaticMotorcycles();
   const [showContactForm, setShowContactForm] = useState(false);
+  
+  const motorcycle = getMotorcycleById(id!);
 
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
-      </div>
-    );
-  }
-
-  if (error || !motorcycle) {
+  if (!motorcycle) {
     return (
       <div className="min-h-screen pt-32 pb-16">
         <div className="container mx-auto px-4 text-center">
@@ -56,11 +50,6 @@ const MotorcycleDetailPage = () => {
     }
   };
 
-  // Adapter les données de l'API Django
-  const images = motorcycle.images?.map((img: any) => img.image) || [
-    'https://images.pexels.com/photos/2611686/pexels-photo-2611686.jpeg'
-  ];
-
   return (
     <div className="min-h-screen pt-32 pb-16">
       <div className="container mx-auto px-4">
@@ -78,7 +67,7 @@ const MotorcycleDetailPage = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 p-6 lg:p-8">
             <div>
               <ImageGallery 
-                images={images} 
+                images={motorcycle.images} 
                 alt={`${motorcycle.brand} ${motorcycle.model}`} 
               />
             </div>
@@ -90,9 +79,9 @@ const MotorcycleDetailPage = () => {
               
               <div className="flex items-center mb-6">
                 <span className="text-2xl font-bold text-red-600">
-                  {parseFloat(motorcycle.price).toLocaleString('fr-FR')} €
+                  {motorcycle.price.toLocaleString('fr-FR')} €
                 </span>
-                {motorcycle.is_new && (
+                {motorcycle.isNew && (
                   <span className="ml-4 bg-red-600 text-white text-xs font-bold uppercase px-3 py-1 rounded">
                     Nouveau
                   </span>
@@ -112,7 +101,7 @@ const MotorcycleDetailPage = () => {
                   <Gauge size={20} className="text-red-600" />
                   <div>
                     <p className="text-sm text-gray-600">Kilométrage</p>
-                    <p className="font-medium text-gray-900">{motorcycle.mileage?.toLocaleString('fr-FR')} km</p>
+                    <p className="font-medium text-gray-900">{motorcycle.mileage.toLocaleString('fr-FR')} km</p>
                   </div>
                 </div>
                 
@@ -156,6 +145,20 @@ const MotorcycleDetailPage = () => {
                 <h2 className="text-xl font-bold text-gray-900 mb-3">Description</h2>
                 <p className="text-gray-700">{motorcycle.description}</p>
               </div>
+
+              {motorcycle.features && motorcycle.features.length > 0 && (
+                <div className="mb-8">
+                  <h2 className="text-xl font-bold text-gray-900 mb-3">Équipements</h2>
+                  <div className="grid grid-cols-2 gap-2">
+                    {motorcycle.features.map((feature, index) => (
+                      <div key={index} className="flex items-center space-x-2">
+                        <div className="w-2 h-2 bg-red-600 rounded-full"></div>
+                        <span className="text-gray-700">{feature}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
               
               <button
                 onClick={toggleContactForm}

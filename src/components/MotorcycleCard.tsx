@@ -8,9 +8,11 @@ interface MotorcycleCardProps {
 const MotorcycleCard = ({ motorcycle }: MotorcycleCardProps) => {
   const [isHovered, setIsHovered] = useState(false);
   
-  // Adapter les données de l'API Django
-  const mainImage = motorcycle.images?.[0]?.image || 'https://images.pexels.com/photos/2611686/pexels-photo-2611686.jpeg';
-  const price = parseFloat(motorcycle.price);
+  // Adapter les données pour les deux formats (API et statique)
+  const mainImage = motorcycle.images?.[0]?.image || motorcycle.images?.[0] || 'https://images.pexels.com/photos/2611686/pexels-photo-2611686.jpeg';
+  const price = typeof motorcycle.price === 'string' ? parseFloat(motorcycle.price) : motorcycle.price;
+  const isNew = motorcycle.is_new || motorcycle.isNew;
+  const isFeatured = motorcycle.is_featured || motorcycle.isFeatured;
   
   return (
     <Link 
@@ -27,9 +29,14 @@ const MotorcycleCard = ({ motorcycle }: MotorcycleCardProps) => {
             isHovered ? 'scale-105' : 'scale-100'
           }`}
         />
-        {motorcycle.is_new && (
+        {isNew && (
           <div className="absolute top-4 right-4 bg-red-600 text-white text-xs font-bold uppercase px-3 py-1 rounded">
             Nouveau
+          </div>
+        )}
+        {isFeatured && (
+          <div className="absolute top-4 left-4 bg-blue-600 text-white text-xs font-bold uppercase px-3 py-1 rounded">
+            À la une
           </div>
         )}
       </div>
@@ -54,6 +61,9 @@ const MotorcycleCard = ({ motorcycle }: MotorcycleCardProps) => {
           </span>
           <span className="inline-block bg-gray-200 text-gray-800 text-xs px-2 py-1 rounded">
             {motorcycle.power} ch
+          </span>
+          <span className="inline-block bg-gray-200 text-gray-800 text-xs px-2 py-1 rounded">
+            Permis {motorcycle.license}
           </span>
         </div>
         

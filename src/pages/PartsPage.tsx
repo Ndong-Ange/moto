@@ -3,11 +3,11 @@ import { SearchIcon } from 'lucide-react';
 import HeroSection from '../components/HeroSection';
 import SectionTitle from '../components/SectionTitle';
 import PartCard from '../components/PartCard';
-import { useParts, usePartCategories } from '../hooks/useParts';
+import { useStaticParts, useStaticCategories } from '../hooks/useStaticData';
 
 const PartsPage = () => {
-  const { data: parts = [], isLoading, error } = useParts();
-  const { data: categories = [] } = usePartCategories();
+  const { data: parts, isLoading } = useStaticParts();
+  const { partCategories } = useStaticCategories();
   const [filteredParts, setFilteredParts] = useState<any[]>([]);
   const [filters, setFilters] = useState({
     search: '',
@@ -20,7 +20,7 @@ const PartsPage = () => {
   });
 
   // Get unique brands from parts
-  const brands = Array.from(new Set(parts.map((part: any) => part.brand))).sort();
+  const brands = Array.from(new Set(parts.map(part => part.brand))).sort();
 
   const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -43,45 +43,45 @@ const PartsPage = () => {
   };
 
   useEffect(() => {
-    let result = parts.filter((part: any) => part.is_available);
+    let result = parts.filter(part => part.isAvailable);
 
     // Filter by search term
     if (filters.search) {
       const searchTerm = filters.search.toLowerCase();
-      result = result.filter((part: any) => 
+      result = result.filter(part => 
         part.name.toLowerCase().includes(searchTerm) || 
         part.brand.toLowerCase().includes(searchTerm) ||
-        part.compatible_models.toLowerCase().includes(searchTerm) ||
+        part.compatibleModels.toLowerCase().includes(searchTerm) ||
         part.description.toLowerCase().includes(searchTerm)
       );
     }
 
     // Filter by category
     if (filters.category) {
-      result = result.filter((part: any) => part.category.name === filters.category);
+      result = result.filter(part => part.category === filters.category);
     }
 
     // Filter by brand
     if (filters.brand) {
-      result = result.filter((part: any) => part.brand === filters.brand);
+      result = result.filter(part => part.brand === filters.brand);
     }
 
     // Filter by condition
     if (filters.condition) {
-      result = result.filter((part: any) => part.condition === filters.condition);
+      result = result.filter(part => part.condition === filters.condition);
     }
 
     // Filter by price range
     if (filters.priceMin) {
-      result = result.filter((part: any) => parseFloat(part.price) >= parseInt(filters.priceMin));
+      result = result.filter(part => part.price >= parseInt(filters.priceMin));
     }
     if (filters.priceMax) {
-      result = result.filter((part: any) => parseFloat(part.price) <= parseInt(filters.priceMax));
+      result = result.filter(part => part.price <= parseInt(filters.priceMax));
     }
 
     // Filter by stock availability
     if (filters.inStock) {
-      result = result.filter((part: any) => part.stock > 0);
+      result = result.filter(part => part.stock > 0);
     }
 
     setFilteredParts(result);
@@ -95,21 +95,6 @@ const PartsPage = () => {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen pt-32 pb-16">
-        <div className="container mx-auto px-4 text-center">
-          <h1 className="text-3xl font-bold text-gray-900 mb-6">
-            Erreur de chargement
-          </h1>
-          <p className="text-gray-600 mb-8">
-            Impossible de charger les pièces détachées. Veuillez réessayer plus tard.
-          </p>
-        </div>
       </div>
     );
   }
@@ -166,7 +151,7 @@ const PartsPage = () => {
                   className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
                 >
                   <option value="">Toutes les catégories</option>
-                  {categories.map((category: any) => (
+                  {partCategories.map(category => (
                     <option key={category.id} value={category.name}>
                       {category.name}
                     </option>

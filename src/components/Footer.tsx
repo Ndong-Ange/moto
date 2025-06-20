@@ -50,7 +50,7 @@ const Footer = () => {
   return (
     <footer className="bg-gray-900 text-white">
       <div className="container mx-auto px-4 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>
             <div className="flex items-center space-x-2 mb-4">
               <Bike size={24} className="text-red-600" />
@@ -119,6 +119,34 @@ const Footer = () => {
                 {garageInfo.hours.saturday}<br />
                 {garageInfo.hours.sunday}
               </p>
+            </div>
+          </div>
+
+          {/* Nouvelle colonne pour la carte */}
+          <div>
+            <h3 className="text-lg font-semibold mb-4">Notre localisation</h3>
+            <div className="rounded-lg overflow-hidden shadow-md" style={{ height: '200px' }}>
+              <iframe
+                title="Agde Moto Gattuso - Localisation"
+                width="100%"
+                height="100%"
+                frameBorder="0"
+                style={{ border: 0 }}
+                src="https://www.openstreetmap.org/export/embed.html?bbox=3.4641164,43.314315,3.4666913,43.3143111&layer=mapnik&marker=43.3143111,3.4666913"
+                allowFullScreen
+                loading="lazy"
+              ></iframe>
+            </div>
+            <div className="mt-2">
+              <a
+                href="https://www.google.fr/maps/place/Agde+moto/@43.314315,3.4641164,17z/data=!3m1!4b1!4m6!3m5!1s0x12b13cf8ec516617:0xad96218c6c6471ea!8m2!3d43.3143111!4d3.4666913!16s%2Fg%2F11gfm8phlk?hl=fr&entry=ttu&g_ep=EgoyMDI1MDYxNi4wIKXMDSoASAFQAw%3D%3D"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center text-sm text-red-600 hover:text-red-700 transition-colors"
+              >
+                <MapPin size={14} className="mr-1" />
+                Ouvrir dans Google Maps
+              </a>
             </div>
           </div>
         </div>

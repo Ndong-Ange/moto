@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Phone, Mail, MapPin, Clock } from 'lucide-react';
 import HeroSection from '../components/HeroSection';
 import SectionTitle from '../components/SectionTitle';
@@ -6,9 +6,56 @@ import ContactForm from '../components/ContactForm';
 import Map from '../components/Map';
 
 const ContactPage = () => {
+  const [garageInfo, setGarageInfo] = useState({
+    address: '123 Avenue de la Plage, 34300 Agde, France',
+    phone: '+33 4 67 12 34 56',
+    email: 'contact@agdemoto.fr',
+    socialMedia: {
+      facebook: 'https://facebook.com/agdemotogattuso',
+      instagram: 'https://instagram.com/agdemotogattuso',
+      youtube: 'https://youtube.com/@agdemotogattuso'
+    },
+    hours: {
+      monday: { open: '09:00', close: '18:00', closed: false },
+      tuesday: { open: '09:00', close: '18:00', closed: false },
+      wednesday: { open: '09:00', close: '18:00', closed: false },
+      thursday: { open: '09:00', close: '18:00', closed: false },
+      friday: { open: '09:00', close: '18:00', closed: false },
+      saturday: { open: '09:00', close: '17:00', closed: false },
+      sunday: { open: '09:00', close: '17:00', closed: true }
+    }
+  });
+
   useEffect(() => {
     window.scrollTo(0, 0);
+    
+    // Charger les informations du garage depuis localStorage
+    const storedGarageInfo = localStorage.getItem('agde-moto-garage-info');
+    if (storedGarageInfo) {
+      const parsed = JSON.parse(storedGarageInfo);
+      setGarageInfo(parsed);
+    }
   }, []);
+
+  const formatHours = (hours: any) => {
+    const days = [
+      { key: 'monday', label: 'Lundi' },
+      { key: 'tuesday', label: 'Mardi' },
+      { key: 'wednesday', label: 'Mercredi' },
+      { key: 'thursday', label: 'Jeudi' },
+      { key: 'friday', label: 'Vendredi' },
+      { key: 'saturday', label: 'Samedi' },
+      { key: 'sunday', label: 'Dimanche' }
+    ];
+
+    return days.map(day => {
+      const dayHours = hours[day.key];
+      if (dayHours.closed) {
+        return `${day.label}: Fermé`;
+      }
+      return `${day.label}: ${dayHours.open} - ${dayHours.close}`;
+    }).join('\n');
+  };
 
   return (
     <div>
@@ -32,7 +79,7 @@ const ContactPage = () => {
                   <MapPin size={24} className="text-red-600 mt-1 flex-shrink-0" />
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900 mb-1">Adresse</h3>
-                    <p className="text-gray-700">123 Avenue de la Plage, 34300 Agde, France</p>
+                    <p className="text-gray-700">{garageInfo.address}</p>
                   </div>
                 </div>
 
@@ -40,7 +87,7 @@ const ContactPage = () => {
                   <Phone size={24} className="text-red-600 mt-1 flex-shrink-0" />
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900 mb-1">Téléphone</h3>
-                    <p className="text-gray-700">+33 4 67 12 34 56</p>
+                    <p className="text-gray-700">{garageInfo.phone}</p>
                   </div>
                 </div>
 
@@ -48,7 +95,7 @@ const ContactPage = () => {
                   <Mail size={24} className="text-red-600 mt-1 flex-shrink-0" />
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900 mb-1">Email</h3>
-                    <p className="text-gray-700">contact@motogarageagde.fr</p>
+                    <p className="text-gray-700">{garageInfo.email}</p>
                   </div>
                 </div>
 
@@ -56,10 +103,8 @@ const ContactPage = () => {
                   <Clock size={24} className="text-red-600 mt-1 flex-shrink-0" />
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900 mb-1">Horaires d'ouverture</h3>
-                    <div className="text-gray-700">
-                      <p>Lundi - Vendredi : 9h - 12h, 14h - 18h</p>
-                      <p>Samedi : 9h - 12h, 14h - 17h</p>
-                      <p>Dimanche : Fermé</p>
+                    <div className="text-gray-700 whitespace-pre-line">
+                      {formatHours(garageInfo.hours)}
                     </div>
                   </div>
                 </div>
@@ -67,7 +112,7 @@ const ContactPage = () => {
 
               <div className="mb-8">
                 <h3 className="text-lg font-semibold text-gray-900 mb-3">Localisation</h3>
-                <Map address="123 Avenue de la Plage, 34300 Agde, France" height="300px" />
+                <Map address={garageInfo.address} height="300px" />
               </div>
             </div>
 
@@ -95,7 +140,7 @@ const ContactPage = () => {
 
           <div className="flex justify-center space-x-6">
             <a
-              href="https://facebook.com"
+              href={garageInfo.socialMedia.facebook}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center justify-center w-12 h-12 bg-white text-blue-600 rounded-full shadow-md hover:shadow-lg transition-shadow"
@@ -106,7 +151,7 @@ const ContactPage = () => {
             </a>
 
             <a
-              href="https://instagram.com"
+              href={garageInfo.socialMedia.instagram}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center justify-center w-12 h-12 bg-white text-pink-600 rounded-full shadow-md hover:shadow-lg transition-shadow"
@@ -119,7 +164,7 @@ const ContactPage = () => {
             </a>
 
             <a
-              href="https://youtube.com"
+              href={garageInfo.socialMedia.youtube}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center justify-center w-12 h-12 bg-white text-red-600 rounded-full shadow-md hover:shadow-lg transition-shadow"
